@@ -1,5 +1,6 @@
-from django.db import models
+from utils.models import TimeStampedModel
+
 
 # Create your models here.
-class Article(models.Model):
+class Article(TimeStampedModel):
     pass
