@@ -29,7 +29,7 @@ def deploy():
         run('./manage.py collectstatic --link --noinput')
 
         # Run migrations
-        # run('./manage.py migrate')
+        run('./manage.py migrate')
 
     sudo('touch {}'.format(env.ini_file))
 
