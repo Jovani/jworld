@@ -19,7 +19,7 @@ sys.path.append(os.path.join(BASE_DIR, 'conf/settings'))
 
 HOSTMAP = {
     'default': [
-        '162.243.112.133',
+        'jworld',
     ],
 }
 
