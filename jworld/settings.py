@@ -1,108 +1,55 @@
 """
-Django settings for jworld project.
+The HOSTMAP variable is a dictionary of lists. The keys represent
+roles of a server, the values represent the hostnames of machines that
+fill those roles. If you are reading this, you likely know what you're
+doing. If you don't know what you're doing, you probably want to put
+your hostname into local_dev. Ensure it has a comma at the end, and
+the hostname is a string.
 
-For more information on this file, see
-https://docs.djangoproject.com/en/1.6/topics/settings/
-
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.6/ref/settings/
+You can get your hostname by typing `hostname` into a terminal.
 """
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import sys
+import socket
+from django.utils import importlib
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+sys.path.append(os.path.join(BASE_DIR, 'conf/settings'))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'c^+uu(jro6z5)x!lek!pqmne1i%3mj64&vrh_93fvkw5m3w5oi'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-TEMPLATE_DEBUG = True
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
-
-TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR, 'templates'),
-)
-
-ALLOWED_HOSTS = []
-
-
-# Application definition
-
-INSTALLED_APPS = (
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'utils',
-    'blog',
-)
-
-MIDDLEWARE_CLASSES = (
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
-
-ROOT_URLCONF = 'jworld.urls'
-
-WSGI_APPLICATION = 'jworld.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-DATABASES = {
-    'default': {
-    'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'jworld_db',
-	'USER': os.environ.get('JWORLD_DB_USER', ''),
-	'PASSWORD': os.environ.get('JWORLD_DB_PASSWORD', ''),
-	'HOST': 'localhost',
-	'PORT': '',
-    }
+HOSTMAP = {
+    'default': [
+        '162.243.112.133',
+    ],
 }
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/1.6/topics/i18n/
+def update_current_settings(file_name):
+    """
+    Given a filename, this function will insert all variables and
+    functions in ALL_CAPS into the global scope.
+    """
+    new_settings = importlib.import_module(file_name)
+    for k, v in new_settings.__dict__.items():
+        if k.upper() == k:
+            globals().update({k: v})
 
-LANGUAGE_CODE = 'en-us'
+current_hostname = socket.gethostname()
 
-TIME_ZONE = 'UTC'
+to_load = []
 
-USE_I18N = True
+for key, hosts in HOSTMAP.items():
+    if current_hostname in hosts:
+        to_load.append(key)
 
-USE_L10N = True
+for host_file in to_load:
+    try:
+        update_current_settings(host_file)
+    except ImportError:
+        print('Error importing {}!'.format(host_file))
 
-USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.6/howto/static-files/
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_URL = '/static/'
-
-STATICFILES_DIRS = (
-    os.path.join(MEDIA_ROOT, "common"),
-)
+if not to_load:
+    try:
+        update_current_settings('localsettings')
+    except ImportError:
+        print('Error importing localsettings!')
