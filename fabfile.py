@@ -1,3 +1,4 @@
+import os
 from fabric.api import env, roles, run, sudo, cd, prefix
 from contextlib import contextmanager as _contextmanager
 
@@ -6,6 +7,7 @@ env.roledefs = {
 }
 env.directory = '/var/www/jworld'
 env.activate = 'source /home/jovani/.virtualenvs/jworld/bin/activate'
+env.db_credentials = 'source /home/jovani/.db_env'
 env.ini_file = '/etc/uwsgi/vassals/jworld.ini'
 env.user = 'jovani'
 
@@ -14,7 +16,8 @@ env.user = 'jovani'
 def virtualenv():
     with cd(env.directory):
         with prefix(env.activate):
-            yield
+            with prefix(env.db_credentials):
+                yield
 
 
 @roles('web')
@@ -32,4 +35,3 @@ def deploy():
         run('./manage.py migrate')
 
     sudo('touch {}'.format(env.ini_file))
-
