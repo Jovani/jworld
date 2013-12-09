@@ -1,5 +1,130 @@
 {% extends "blog/blog.html" %}
 
 {% block article_body %}
-    Coming soon!
+    <h4>Introduction</h4>
+    <p>
+        I've long wanted to properly set up a <a href="https://www.djangoproject.com/">Django</a>, <a href="http://projects.unbit.it/uwsgi/">uWSGI</a> and <a href="http://nginx.org/">Nginx</a> server to host my various projects.
+        I'd searched across various sites, blogs and tutorials and quickly noticed that every guide I find was either broken or outdated.
+    </p>
+    <p>
+        The uWSGI docs seemed most promising, but a lot of their examples simply didn't work as stated. Often I'd have to dig or play
+        around to get something to work. 
+        While this is by no means a bad thing, and I always encourage experimentation, it's very frustrating to find
+        guides that seem to lead you astray.
+    </p>
+    <p>
+        In early 2013, with the help of my friend and coworker Bartek and a few others, I was able to set up the aforementioned web stack for a project at work. Unfortunately it had been some time since I'd done this and I'd forgotten some of the crucial steps. 
+        I was kicking myself for not having documented my steps at the time, but as they say, hindsight is 20/20 and regretting the past wasn't going to solve my problem.
+    </p>
+    <p>
+        I remembered that Bartek had a blog post documenting this very process, but it too was now a year or so outdated. 
+        Furthermore, he was out of the country at the time, so there was no way of getting his help directly. 
+        Luckily with the help of his blog post, referencing some of the config files from my work's servers, a bit of luck and a lot of patience, I successfully set up the server that hosts this site.
+    </p>
+    <p>
+        To avoid having this same problem in the future, and to hopefully help others out there like myself, I decided that my first project would be a write-up of my steps towards getting this damned setup to work (It's actually really great and simple once you've done it once or twice).
+    </p>
+
+    <p>
+        <code>TLDR:</code> No recent tutorials avaliable. I make tutorial. You read now.
+    </p>
+
+    <br>
+
+    <h4>Before we begin</h4>
+    <p>
+        This is going to be a very biased tutorial. What do I mean by this?
+    </p>
+    <ul>
+        <li>
+            I assume that you are using Linux; specifically Ubuntu 12.04 LTE. A good chunk of this tutorial will probably work on many other distributions of Linux with some tweaking, so tweak away!
+        </li>
+        <li>
+            I will make suggestions based on my own experience, however limited it may be. Some of that experience may not be backed by anything but the fact that I use the tools I use because I like them. If you the reader, finds flaws in my ways, please feel free to contact me and give me a piece of your mind.
+        </li>
+        <li>
+            By the time you are reading this, this guide may be out of date! If this is the case, feel free to contact me and we can try fix whatever problems have arisen. This would also give me a chance to update the article and not be obsolete anymore!
+        </li>
+    </ul>
+    <p>
+        And with that, let's begin!
+    </p>
+
+    <br>
+
+    <h4>Ubuntu</h4>
+    <p>
+        Feel free to skip this part if you already have Ubuntu set up as you like it, or otherwise know exactly what you want to do. I assume a fresh install here. To be perfectly fair, I got this part off of the Linode "setting up the hostname" tutorial. You can find it here, with more information and instructions for other Linux distros. I'll offer my own, condensed version just below, but I encourage all to read through the Linode tutorial as well; lots of great information!
+    </p>
+    <p>
+        One very important caveat to the Linode instructions; do NOT do as they suggest for the Firewall setup. I found that doing so prevented me from accessing my server via web. That's definitely my inexperience showing, so if you're more comfortable with Unix Firewalls, by all means. Let's get started!
+    </p>
+
+    <h5>Set up hostname</h5>
+    <pre><code>
+        echo "your_hostname" > /etc/hostname
+        hostname -F /etc/hostname
+    </code></pre>
+    <p>
+        Replace <code>your_hostname</code> with your own fully qualified domain name (FQDN). Use something unique. This can be just about anything; it can be, but doesn't have to be the website domain. I think of this as the name of the server.
+    </p>
+
+    <h5>Edit your /etc/hosts file</h5>
+    <p>
+        Use your favourite editor (I use vim) to modify your hosts file.
+    </p>
+    <pre><code>
+        127.0.0.1       localhost.localdomain           localhost
+        your_ip_address your_hostname.your_domain.com   your_hostname
+    </code></pre>
+    <p>
+        Replace <code>your_hostname</code> and <code>your_domain</code> with the respective values. If you don't have a domain yet, your_domain can really be anything you want.
+    </p>
+
+    <h5>Set your timezone</h5>
+    <pre><code>
+        dpkg-reconfigure tzdata
+    </code></pre>
+
+    <h5>Install Software Updates</h5>
+    <p>
+        This is where I deviate a bit from the Linode tutorial to speed later steps up. Edit your <code>/etc/apt/sources.list</code> file and append the following two lines to the end of the file.
+    </p>
+    <pre><code>
+        deb http://nginx.org/packages/ubuntu/ precise nginx
+        deb-src http://nginx.org/packages/ubuntu/ precise nginx
+    </code></pre>
+    <p>
+        Reminder that this tutorial assumes Ubuntu 12.4 LTE. If you are using something other than this, replace <code>precise</code> in the two lines above with whatever your distro's codename is. Now that this is done, go ahead and do the following.
+    </p>
+    <pre><code>
+        apt-get update
+        apt-get upgrade --show-upgraded
+    </code></pre>
+    <p>
+        What we did here is tell apt-get where the newest versions of Nginx lives, and then told it to update it's sources. Finally we told it to upgrade all the installed packages to their latest versions, with these new sources. Note that this does NOT install Nginx, but we would have to do it later anyways, so may as well do it now.
+    </p>
+
+    <h5>Secure our precious server</h5>
+    <p>
+        This part of the tutorial comes from another article off of the Linode docs. You can find the full article <a href="https://library.linode.com/securing-your-server">here</a>. Again, if you decide to follow their instructions directly, stop when you get to "Creating a Firewall."
+    </p>
+
+    <h5>Create a new user</h5>
+    <p>
+        You really don't want to do all your work as root. It's dangerous as there are no safety nets to stop you from doing something stupid like <code>rm -rf /</code>. Not that I've tried that or anything...
+    </p>
+    <p>
+        For this reason, we're going to create a new user to do all our dirty work with.
+    </p>
+    <pre><code>
+        adduser username
+        usermod -a -G sudo username
+    </code></pre>
+    <p>
+        Replace <code>username</code> with your desired username. Then <code>logout</code> and ssh back in as your newly created user.
+    </p>
+
+
+
 {% endblock %}

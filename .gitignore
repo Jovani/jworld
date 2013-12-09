@@ -1,5 +1,4 @@
 logs/
-static/
 
 *.py[cod]
 *.pyc
@@ -7,5 +6,7 @@ static/
 *.swp
 *.bak
 *.env
+
+.DS_Store
 
 localsettings.py

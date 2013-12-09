@@ -1,9 +1,14 @@
 {% extends "base.html" %}
+{% load staticfiles %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static "blog/blog.css" %}">
+{% endblock %}
 
 {% block content %}
     <div class='row'>
         <div class='col-md-12'>
-            <div class='panel panel-primary'>
+            <div class='panel panel-warning'>
                 <div class='panel-heading'>
                     <h3 class='panel-title'>{{ article.title }}</h3>
                 </div>

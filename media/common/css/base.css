@@ -1,5 +1,14 @@
 body {
-    background: #D3EBFF;
+    background: #FFDDB2;
+}
+
+a {
+    color: #E8490C;
+    font-weight: bold;
+}
+
+a:hover {
+    color: red;
 }
 
 #main-nav {
