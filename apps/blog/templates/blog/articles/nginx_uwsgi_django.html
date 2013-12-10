@@ -40,7 +40,13 @@
             I assume that you are using Linux; specifically Ubuntu 12.04 LTE. A good chunk of this tutorial will probably work on many other distributions of Linux with some tweaking, so tweak away!
         </li>
         <li>
+            At the time of writing, I am using Django 1.6, 
+        </li>
+        <li>
             I will make suggestions based on my own experience, however limited it may be. Some of that experience may not be backed by anything but the fact that I use the tools I use because I like them. If you the reader, finds flaws in my ways, please feel free to contact me and give me a piece of your mind.
+        </li>
+        <li>
+            I'll be using <a href="http://www.postgresql.org/">PostgreSQL</a> as my database weapon of choice.
         </li>
         <li>
             By the time you are reading this, this guide may be out of date! If this is the case, feel free to contact me and we can try fix whatever problems have arisen. This would also give me a chance to update the article and not be obsolete anymore!
@@ -69,9 +75,9 @@
         Replace <code>your_hostname</code> with your own fully qualified domain name (FQDN). Use something unique. This can be just about anything; it can be, but doesn't have to be the website domain. I think of this as the name of the server.
     </p>
 
-    <h5>Edit your /etc/hosts file</h5>
+    <h5>Edit your hosts file</h5>
     <p>
-        Use your favourite editor (I use vim) to modify your hosts file.
+        Use your favourite editor (I use vim) to modify <code>/etc/hosts</code>.
     </p>
     <pre><code>
         127.0.0.1       localhost.localdomain           localhost
@@ -122,9 +128,109 @@
         usermod -a -G sudo username
     </code></pre>
     <p>
-        Replace <code>username</code> with your desired username. Then <code>logout</code> and ssh back in as your newly created user.
+        Replace <code>username</code> with your desired username. Then <code>logout</code>.
     </p>
 
+    <h5>Better SSH</h5>
+    <p>
+        SSHing into a server with a username and password is probably the most comman way people use SSH; and it's the most often taught. Now that we have a new user, it'd be nice if we could log in without having to type and re-type our pasword in every time.
+    </p>
+    <p>
+        Navigate to your <code>~/.ssh</code> folder on your home machine (I assume you use some *nix OS; if you don't, I wish you the best of luck). If one doesn't exist, or it's empty, you're going to have to generate a new SSH key pair. Github actually has an excellent tutorial on how to do this, you can view it <a href="https://help.github.com/articles/generating-ssh-keys">here</a>! You can stop once you're done step two.
+    </p>
+    <p>
+        Once you're done, in a different shell tab or window, <code>ssh</code> back into your server and navigate to the <code>~/.ssh</code> directory. Create one if it doesn't already exist, but there's no need to generate an RSA key-pair here unless you otherwise need one. Open the <code>authorized_keys</code> file with your favourite editor. Back on your own machine, copy the contents of your <code>id_rsa.pub</code> file, and paste it into the <code>authorized_keys</code> file of your server. To finish things off, <code>logout</code> and then <code>ssh</code> back in. If you did everything correctly; it should no longer ask for a password, but use your newly created RSA key-pair!
+    </p>
+
+    <h5>Enforcing better SSHing habbits</h5>
+    <p>
+        We no longer want people to be able to SSH in as root. Furthermore, some may desire to disable login via username and password altogther. Enter SSH configuration! Go ahead and edit <code>/etc/ssh/sshd_config</code> with your favourite editor.
+    </p>
+
+    <p>
+        Change the following.
+    </p>
+    <pre><code>
+        PermitRootLogin no
+    </code></pre>
+    <p>
+        If you want to disable password login entirely, go ahead and change the following line as well. Note that this part is optional. I myself have opted not to do this.
+    </p>
+    <pre><code>
+        PasswordAuthentication no
+    </code></pre>
+    <p>
+        Then go ahead and restart SSH by issuing <code>sudo service ssh restart</code>
+    </p>
+    <p>
+        As I mentioned, this is where I suggest you stop following the Linode guide. I do suggest you come back and try to properly set up a firewall later on. I intend to do some research and testing on the matter myself; when I do, I'll post a short tutorial on how to get it to work.
+    </p>
+    <p>
+        With that, we're done the Ubuntu portion of this tutorial! Celebrate with a nice, cold Beer!
+    </p>
+
+    <br>
+
+    <h4>Django</h4>
+    <h5>Setup and tools</h5>
+    <p>
+        One might naturally assume that we'd go from setting up the OS to setting up Nginx, the server, first. Trust me when I say that there's method to my madness and that it's better to first create a Django project. Even if you're not yet at the point where you have any project ideas, go ahead and create a dummy project to play with and make sure everything works. You can always create different ones later and apply the same steps.
+    </p>
+    <p>
+        Here, I'll make a recommendation to use several tools that I've grown to love in my two years coding experience. They are <a href="http://www.pip-installer.org/en/latest/">pip</a> and <a href="http://www.virtualenv.org/en/latest/">virtualenv</a>/<a href="http://virtualenvwrapper.readthedocs.org/en/latest/">virtualenvwrapper</a>. Ubuntu 12.04 ships with Python 2.7.3 by default. If this is severly outdated at the time of reading, use apt-get and/or Google to upgrade Python. Now we're going to install the aforementioned tools.
+    </p>
+    <pre><code>
+        sudo apt-get install pip
+        sudo pip install pip --upgrade
+        sudo pip install virtualenv virtualenvwrapper
+    </code></pre>
+    <p>
+        That's right! We use pip to upgrade itself, since apt-get seems to install some horribly outdated version. This really fucks with the age-old "What came first" question. This is also the last time (in this guide) that I'll be asking you to install anything with pip using sudo.
+    </p>
+
+    <h5>Virtualenv</h5>
+    <p>
+        So what is virtualenv and virtualenvwrapper you ask? Virtualenv, as the name suggests, is a virtual environmenmt for your Python-based projects. It's a neat and great way to sandbox your different projects so that they don't overlap and interfeer with each other. This also would allow you to have several Python projects on one machine, all using different versions of Python, Django and any number of other tools. Virtualenvwrapper is just a set of helper tools and calls that make using virtualenv more painless.
+    </p>
+    <p>
+        To finish off the install, we need to add the following few lines to your <code>~/.bashrc</code> file.
+    </p>
+    <pre><code>
+        export WORKON_HOME=$HOME/.virtualenvs
+        export PROJECT_HOME=$HOME/Devel
+        source /usr/local/bin/virtualenvwrapper.sh
+    </code></pre>
+    <p>
+        To make these changes to your <code>bashrc</code> file take effect, either do <code>source ~/.bashrc</code> or <code>logout</code> and then <code>ssh</code> back into your server.
+    </p>
+    <p>
+        Now we can go ahead and create our virst virtualenv! Go ahead and do <code>mkvirtualenv env_name</code>. Be sure to replace <code>env_name</code> with some name that you associate with this project. Often, this can be the project name or some short-hand. The command will issue some text as well as a bunch of dots and then give control back to you. Congradulations, you've both created and entered into your very first virtualenv.
+    </p>
+    <div class='alert alert-warning'>
+        <strong>Important!</strong> Do not associate your virtualenv with your working directory; they are entirely separate things. Unlike your working directory, where your files are kept, your virtualenv is a more abstract layer of separation. It's a sandbox for system environment variables. It prefixes your PATH variable with some of it's own directories; and most importantly, everything you install via pip inside a virtualenv will only exist when inside that virtualenv! That's because it's all installed inside your <code>~/.virtualenvs/env_name/</code> folder.
+    </div>
+    <p>
+        Here are a few virtualenv/virtualenvwrapper commands to note. Replace <code>env_name</code> as appropriate.
+    </p>
+    <pre><code>
+        workon env_name         # Activate or switch into a virtualenv.
+        mkvirtualenv env_name   # Create a new virtualenv, and activate it.
+        rmvirtualenv env_name   # Remove a virtualenv.
+        deactivate              # Leave your current virtualenv.
+    </code></pre>
+    <p>
+        With the above in mind, go ahead and create a directory for your new Django project. I personally hold all my Django projects in the <code>/var/www/</code> directory. You can keep yours wherever you wish, just make adjustments to the instructions where necessary. Don't forget to install Django with <code>pip install django</code>, just make sure you're still in your virtualenv.
+    </p>
+    <p>
+        I intend to do a writeup of a more in-depth Django tutorial, as I find the official one to be a bit lacking. Until then, please reference the Django tutorial or docs for complete information on how to start a Django project. The following will assume you've done this before.
+    </p>
+    <pre><code>
+        django-admin.py startproject project_name
+        cd project_name
+        mkdir media static logs
+    </code></pre>
+
+    <h5>Breif intermission - Postgres</h5>
 
 
 {% endblock %}
