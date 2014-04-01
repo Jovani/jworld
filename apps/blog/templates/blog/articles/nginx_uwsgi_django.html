@@ -180,7 +180,7 @@
         Here, I'll make a recommendation to use several tools that I've grown to love in my two years coding experience. They are <a href="http://www.pip-installer.org/en/latest/">pip</a> and <a href="http://www.virtualenv.org/en/latest/">virtualenv</a>/<a href="http://virtualenvwrapper.readthedocs.org/en/latest/">virtualenvwrapper</a>. Ubuntu 12.04 ships with Python 2.7.3 by default. If this is severly outdated at the time of reading, use apt-get and/or Google to upgrade Python. Now we're going to install the aforementioned tools.
     </p>
     <pre><code>
-        sudo apt-get install pip
+        sudo apt-get install python-pip
         sudo pip install pip --upgrade
         sudo pip install virtualenv virtualenvwrapper
     </code></pre>
@@ -231,6 +231,23 @@
     </code></pre>
 
     <h5>Breif intermission - Postgres</h5>
+    <p>
+        We're now going to install the Database that will power our project. If you wish to use a different DB, or know what you're doing, skip to the next section. Otherwise, step outside of your virtualenv momentarily by issuing the command <code>deactivate</code>. We're going to first install the dependancies for Postgres and then install it as well.
+    </p>
+    <pre><code>
+        sudo apt-get install libpq-dev python-dev
+        sudo apt-get install postgresql postgresql-contrib
+    </code></pre>
+    <p>
+        Quick and painless! Postgres is installed. Now all we have to do is set it up. Enter the following instructions one at a time and follow any on-screen instructions. When creating the new user, enter in the password when prompted and then answer no (N) for all of the subsequent questions. Replace <code>db_name</code> and <code>user_name</code> accordingly.
+    </p>
+    <pre><code>
+        sudo su - postgres
+        createdb db_name
+        createuser -P user_name
+        psql
+        GRANT ALL PRIVILEGES ON DATABASE db_name TO user_name;
+    </code></pre>
 
 
 {% endblock %}
